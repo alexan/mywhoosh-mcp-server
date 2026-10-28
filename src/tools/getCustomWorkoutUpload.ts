@@ -4,7 +4,7 @@ import { MyWhooshClient } from '../clients/mywhoosh.js';
 import { asMcpError, McpError } from './utils/toolHelpers.js';
 
 export const method = 'getCustomWorkoutUpload';
-export const description = 'Get S3 URL for downloading custom workouts.';
+export const description = 'Get S3 URL for downloading custom workouts. Known MyWhoosh backend bug: fails with a sportsModeType NaN error once any custom workout was uploaded through the API (https://github.com/isllabres/mywhoosh-mcp-server/issues/1).';
 export const parameters = z.object({});
 
 export async function handler(

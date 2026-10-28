@@ -62,6 +62,9 @@ CREATING NEW WORKOUTS:
 - Use a new unique workout ID (timestamp or random large number)
 - Define all workout properties and steps
 
+The API only replies "Custom workout is being uploaded."; a known MyWhoosh backend bug stores uploaded
+workouts with sportsModeType NaN, so they cannot be read back or deleted through the API (they work in the app).
+
 UPDATING EXISTING WORKOUTS:
 - Use the same workout ID as the existing workout
 - Include all workout properties (changed and unchanged)
@@ -93,6 +96,7 @@ EXAMPLE WORKOUT:
 
 export const parameters = z.object({
   workouts: z.array(workoutSchema).describe('Array of workout definitions to upload'),
+  sportsModeType: z.number().int().min(0).max(3).default(0).describe('Sports mode type, one of 0-3 (0 = cycling, as the app default)'),
 });
 
 export async function handler(
@@ -121,6 +125,9 @@ export async function handler(
       baseUrl: 'COACHING',
       body: JSON.stringify({
         UserId: whooshId,
+        // required top-level since late 2025 (400 "SportsModeType should not be empty" without it);
+        // see https://github.com/isllabres/mywhoosh-mcp-server/issues/1
+        SportsModeType: args.sportsModeType,
         WorkoutsData: workoutsData,
       }),
     });

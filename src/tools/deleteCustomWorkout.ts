@@ -4,7 +4,7 @@ import { MyWhooshClient } from '../clients/mywhoosh.js';
 import { asMcpError, McpError } from './utils/toolHelpers.js';
 
 export const method = 'deleteCustomWorkout';
-export const description = 'Delete a custom workout from MyWhoosh.';
+export const description = 'Delete a custom workout from MyWhoosh. Known MyWhoosh backend bug: fails with a sportsModeType NaN error once any custom workout was uploaded through the API (https://github.com/isllabres/mywhoosh-mcp-server/issues/1).';
 export const parameters = z.object({
   workoutId: z.number().describe('Workout ID to delete'),
 });

@@ -30,6 +30,18 @@ Claude Code opens the authorization page in your browser. claude.ai web: Setting
 
 Set the `OWNER_WHOOSH_IDS` secret to your WhooshId (comma-separated allowlist). Logins for any other MyWhoosh account are rejected at the authorize step, so strangers can't use your deployment even with their own valid MyWhoosh credentials. Leave it unset to allow any account.
 
+## Known limitations
+
+Workouts uploaded through the API are stored by MyWhoosh with `sportsModeType: NaN`, a MyWhoosh backend bug
+(see [isllabres/mywhoosh-mcp-server#1](https://github.com/isllabres/mywhoosh-mcp-server/issues/1)). Tested on a live account:
+
+| Operation | Tool | Works |
+| --- | --- | --- |
+| Create / update custom workout | `uploadCustomWorkout` | yes (visible in the app) |
+| List custom workouts | `downloadCustomWorkoutsFromS3`, `getCustomWorkoutUpload` | no, fails once a NaN record exists |
+| Delete custom workout | `deleteCustomWorkout` | no, delete in the MyWhoosh app |
+| Schedule / list / delete calendar tasks | `createTask`, `getDateRangeTaskList`, `deleteTask` | yes |
+
 ## Notes
 
 - MyWhoosh access tokens expire after about two weeks. Tool calls then fail with "session expired" - re-authorize the server in your client to log in again.

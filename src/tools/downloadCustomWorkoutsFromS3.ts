@@ -5,7 +5,7 @@ import { asMcpError, McpError } from './utils/toolHelpers.js';
 import { unzipSync, strFromU8 } from 'fflate';
 
 export const method = 'downloadCustomWorkoutsFromS3';
-export const description = 'Download and extract all custom workouts from MyWhoosh S3 bucket. Returns the workout data as parsed JSON objects.';
+export const description = 'Download and extract all custom workouts from MyWhoosh S3 bucket. Returns the workout data as parsed JSON objects. Known MyWhoosh backend bug: fails with a sportsModeType NaN error once any custom workout was uploaded through the API (https://github.com/isllabres/mywhoosh-mcp-server/issues/1).';
 export const parameters = z.object({});
 
 export async function handler(
