@@ -30,16 +30,18 @@ Claude Code opens the authorization page in your browser. claude.ai web: Setting
 
 Set the `OWNER_WHOOSH_IDS` secret to your WhooshId (comma-separated allowlist). Logins for any other MyWhoosh account are rejected at the authorize step, so strangers can't use your deployment even with their own valid MyWhoosh credentials. Leave it unset to allow any account.
 
-## Known limitations
+## Custom workouts
 
-Workouts uploaded through the API are stored by MyWhoosh with `sportsModeType: NaN`, a MyWhoosh backend bug
-(see [isllabres/mywhoosh-mcp-server#1](https://github.com/isllabres/mywhoosh-mcp-server/issues/1)). Tested on a live account:
+Custom workouts are stored per sport: pass `sport` (`cycling`, `running` or `rowing`, default `cycling`)
+to `uploadCustomWorkout`, `downloadCustomWorkoutsFromS3`, `getCustomWorkoutUpload` and `deleteCustomWorkout`.
+The request shapes follow what the MyWhoosh app sends. Tested on a live
+account for all three sports:
 
 | Operation | Tool | Works |
 | --- | --- | --- |
-| Create / update custom workout | `uploadCustomWorkout` | yes (visible in the app) |
-| List custom workouts | `downloadCustomWorkoutsFromS3`, `getCustomWorkoutUpload` | no, fails once a NaN record exists |
-| Delete custom workout | `deleteCustomWorkout` | no, delete in the MyWhoosh app |
+| List custom workouts | `downloadCustomWorkoutsFromS3`, `getCustomWorkoutUpload` | yes |
+| Create / update (same `Id`) | `uploadCustomWorkout` | yes (cycling checked in the app; running checked via the list) |
+| Delete | `deleteCustomWorkout` | yes |
 | Schedule / list / delete calendar tasks | `createTask`, `getDateRangeTaskList`, `deleteTask` | yes |
 
 ## Notes

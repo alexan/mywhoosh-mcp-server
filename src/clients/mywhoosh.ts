@@ -170,17 +170,6 @@ export class MyWhooshClient {
           `MyWhoosh session expired (401). Re-authorize the MCP server in your client. ${errorText}`
         );
       }
-      // MyWhoosh backend bug: uploaded custom workouts get persisted with sportsModeType NaN, and
-      // every coaching read/delete touching one fails (https://github.com/isllabres/mywhoosh-mcp-server/issues/1)
-      if (errorText.includes('CastError') && errorText.includes('sportsModeType')) {
-        throw new McpError(
-          ErrorCode.InternalError,
-          'MyWhoosh cannot load your custom workouts: at least one is stored with sportsModeType NaN, a known ' +
-            'MyWhoosh backend bug that affects every workout uploaded through the API. Listing and deleting custom ' +
-            'workouts through the API fail until MyWhoosh fixes it; uploading and scheduling still work. Delete ' +
-            'workouts in the MyWhoosh app.'
-        );
-      }
       throw new McpError(ErrorCode.InternalError, `API request failed: ${response.status} - ${errorText}`);
     }
 
