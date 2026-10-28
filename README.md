@@ -100,6 +100,14 @@ The request shapes follow what the MyWhoosh app sends. Tested on a live account:
 | Create / update (same `Id`) | `uploadCustomWorkout` | yes (cycling checked in the app; running checked via the list) |
 | Delete | `deleteCustomWorkout` | yes |
 
+## Sports
+
+Besides the custom workout tools, these tools take `sport` (`cycling`, `running` or `rowing`, default `cycling`)
+and send it as `sportType`, like the app: `getBundleInfo`, `getCalculations`, `getChallenges`,
+`getControllableBots`, `getEvents`, `getGarageItems`, `getGroupWorkouts`, `getMissions`, `getMissionProgress`,
+`getPlayerAchievements`, `getPlayerGhostRideData`, `getPlayerTrophiesJerseys`, `getTreasureHunt`.
+`getTreasureHunt` returns an encoded string (the app receives the same).
+
 ## License
 
 ISC License - see [LICENSE](LICENSE) file for details.
