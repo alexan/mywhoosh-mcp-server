@@ -63,7 +63,7 @@ ${error ? `<div class="err">${esc(error)}</div>` : ''}
   <input type="password" name="password" autocomplete="current-password" required ${email ? 'autofocus' : ''}>
   <button type="submit">Connect MyWhoosh</button>
 </form>
-<p class="note" style="margin-top:2rem">Credentials are sent once to this server to log in to MyWhoosh, then discarded — only the resulting MyWhoosh tokens are kept, encrypted, in your authorization grant. They expire after about two weeks; re-authorize the server in your client then.</p>
+<p class="note" style="margin-top:2rem">Credentials are sent once to this server to log in to MyWhoosh, then discarded — only the resulting MyWhoosh tokens are kept, encrypted, in your authorization grant. They renew automatically while you use the server; after about 60 days without use you log in again.</p>
 `
   );
 }

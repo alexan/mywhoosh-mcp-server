@@ -1,8 +1,8 @@
 import { McpAgent } from 'agents/mcp';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
-import { OAuthProvider } from '@cloudflare/workers-oauth-provider';
-import { MyWhooshClient, type AuthTokens } from './clients/mywhoosh.js';
+import { OAuthProvider, OAuthError, type TokenExchangeCallbackOptions } from '@cloudflare/workers-oauth-provider';
+import { MyWhooshClient, TokenRefreshError, tokenExpiry, type AuthTokens } from './clients/mywhoosh.js';
 import { SERVER_NAME, APP_VERSION } from './constants.js';
 import { authHandler } from './auth.js';
 import { tools } from './tools/index.js';
@@ -48,6 +48,27 @@ export class MyWhooshMCP extends McpAgent<Env, unknown, Props> {
   }
 }
 
+// Renew the MyWhoosh tokens when ours are refreshed (hourly while a client is active) and the
+// MyWhoosh access token has less than this left; each renewal also extends the refresh token to ~60 days
+const MYWHOOSH_REFRESH_WINDOW_SECONDS = 3 * 86400;
+
+async function renewMyWhooshTokens(options: TokenExchangeCallbackOptions) {
+  if (options.grantType !== 'refresh_token') return;
+  const tokens = (options.props as Props).tokens;
+  if (tokenExpiry(tokens.accessToken) - Date.now() / 1000 > MYWHOOSH_REFRESH_WINDOW_SECONDS) return;
+  try {
+    const renewed = await new MyWhooshClient(tokens).refresh();
+    log('info', 'Renewed MyWhoosh tokens', { userId: options.userId });
+    return { newProps: { tokens: renewed } satisfies Props };
+  } catch (e) {
+    // a rejected refresh token (e.g. unused for 60 days) means the user has to log in again
+    if (e instanceof TokenRefreshError && e.rejected) {
+      throw new OAuthError('invalid_grant', { description: 'MyWhoosh session expired, please log in again.' });
+    }
+    throw e;
+  }
+}
+
 // OAuth 2.1 only: /authorize serves the MyWhoosh login page; grants carry the MyWhoosh tokens as
 // encrypted props; every /mcp request is gated on a provider-validated access token.
 export default new OAuthProvider({
@@ -60,4 +81,7 @@ export default new OAuthProvider({
   tokenEndpoint: '/oauth/token',
   clientRegistrationEndpoint: '/oauth/register',
   clientIdMetadataDocumentEnabled: true,
+  // no fixed grant lifetime: it lives as long as MyWhoosh renewal succeeds (rolling ~60 days)
+  refreshTokenTTL: undefined,
+  tokenExchangeCallback: renewMyWhooshTokens,
 });

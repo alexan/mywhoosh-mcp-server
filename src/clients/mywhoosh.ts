@@ -14,6 +14,27 @@ export interface AuthTokens {
   whooshId: string;
 }
 
+// status lets callers tell a rejected refresh token (re-login needed) from a transient failure
+export class TokenRefreshError extends Error {
+  constructor(readonly status: number) {
+    super(`MyWhoosh token refresh failed: ${status}`);
+  }
+
+  get rejected(): boolean {
+    return this.status === 401 || this.status === 403 || this.status === 426;
+  }
+}
+
+// Seconds since epoch at which a MyWhoosh JWT expires; 0 when it can't be read
+export function tokenExpiry(jwt: string): number {
+  try {
+    const payload = jwt.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    return Number(JSON.parse(atob(payload)).exp) || 0;
+  } catch {
+    return 0;
+  }
+}
+
 export class MyWhooshClient {
   private tokens: AuthTokens | null = null;
 
@@ -68,6 +89,36 @@ export class MyWhooshClient {
     return this.tokens;
   }
 
+  // Same call the app makes: GET tokens/generate with the refresh token as bearer returns a fresh
+  // access token (~15 days) and refresh token (~60 days). The old refresh token is not revoked.
+  async refresh(): Promise<AuthTokens> {
+    if (!this.tokens?.refreshToken) {
+      throw new McpError(ErrorCode.InvalidRequest, 'No MyWhoosh refresh token');
+    }
+
+    const response = await fetch(`${BASE_URLS.PUBLIC}/http-service/api/tokens/generate`, {
+      method: 'GET',
+      headers: { 'User-Agent': USER_AGENT, Authorization: `Bearer ${this.tokens.refreshToken}` },
+    });
+
+    if (!response.ok) {
+      throw new TokenRefreshError(response.status);
+    }
+
+    const data: any = await response.json();
+    if (!data.AccessToken || !data.RefreshToken) {
+      throw new McpError(ErrorCode.InvalidRequest, 'Token refresh returned no tokens');
+    }
+
+    this.tokens = {
+      accessToken: data.AccessToken,
+      refreshToken: data.RefreshToken,
+      whooshId: data.WhooshId ?? this.tokens.whooshId,
+    };
+
+    return this.tokens;
+  }
+
   async get<T = any>(endpoint: string, options: MyWhooshRequestOptions = {}): Promise<T> {
     return this.request<T>(endpoint, { ...options, method: 'GET' });
   }
@@ -112,7 +163,7 @@ export class MyWhooshClient {
 
     if (!response.ok) {
       const errorText = await response.text();
-      // MyWhoosh access tokens live ~15 days; past that the only way back is a new login
+      // tokens renew on OAuth refresh (src/index.ts); a 401 here means renewal didn't happen in time
       if (response.status === 401) {
         throw new McpError(
           ErrorCode.InvalidRequest,

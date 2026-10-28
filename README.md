@@ -44,7 +44,7 @@ Workouts uploaded through the API are stored by MyWhoosh with `sportsModeType: N
 
 ## Notes
 
-- MyWhoosh access tokens expire after about two weeks. Tool calls then fail with "session expired" - re-authorize the server in your client to log in again.
+- MyWhoosh tokens renew automatically: when your client refreshes its token and the MyWhoosh access token (valid ~15 days) has less than 3 days left, the server swaps it via the refresh token (valid ~60 days, extended on every renewal). You only log in again after ~60 days without using the server.
 - Access tokens are bearer credentials: whoever holds a valid one has your data until it expires, so security rests on your MCP client keeping its stored token secret.
 - Local dev: `npm run dev`, then point a client at `http://localhost:8787/mcp`.
 
