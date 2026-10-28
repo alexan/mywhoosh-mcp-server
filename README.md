@@ -34,7 +34,7 @@ Set the `OWNER_WHOOSH_IDS` secret to your WhooshId (comma-separated allowlist). 
 
 Custom workouts are stored per sport: pass `sport` (`cycling`, `running` or `rowing`, default `cycling`)
 to `uploadCustomWorkout`, `downloadCustomWorkoutsFromS3`, `getCustomWorkoutUpload` and `deleteCustomWorkout`.
-The request shapes follow what the MyWhoosh app sends. Tested on a live
+The request shapes follow what the MyWhoosh app sends (see `.claude/skills/mitm-capture`). Tested on a live
 account for all three sports:
 
 | Operation | Tool | Works |
