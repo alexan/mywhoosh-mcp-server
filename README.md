@@ -29,12 +29,14 @@ Requires a Cloudflare account (`npx wrangler login`).
 Your account-specific ids live in `wrangler.local.jsonc`, which is git-ignored; `wrangler.jsonc` stays generic
 for local development.
 
-1. `npm install`
+1. `npm install` and `npm run library`
 2. `cp wrangler.jsonc wrangler.local.jsonc`
 3. `npx wrangler kv namespace create mywhoosh-mcp-oauth` - replace `REPLACE_WITH_KV_ID` in `wrangler.local.jsonc` with the printed id
    (use a namespace of its own; sharing one with another OAuth worker mixes their grants)
 4. Recommended: `npx wrangler secret put OWNER_WHOOSH_IDS -c wrangler.local.jsonc` (see below)
-5. `npm run deploy` (runs `wrangler deploy -c wrangler.local.jsonc`)
+5. `npm run deploy`: deploys with `wrangler.local.jsonc`, then tags the deployed commit as `deploy-<version>`
+   (the first 8 characters of the Cloudflare version id; the tag message holds the full id, URL and time) and
+   pushes the tag. It refuses to run with uncommitted changes, so a tag always matches the deployed code.
 
 ## Connect a client
 
@@ -60,6 +62,19 @@ The request shapes follow what the MyWhoosh app sends (see `.claude/skills/mitm-
 | Create / update (same `Id`) | `uploadCustomWorkout` | cycling (visible in the app), running (via the list) |
 | Delete | `deleteCustomWorkout` | running, rowing |
 | Schedule / list / delete calendar tasks | `createTask`, `getDateRangeTaskList`, `deleteTask` | yes |
+
+## Official workouts
+
+`listOfficialWorkouts` lists MyWhoosh's official library for a sport (cycling: 761 workouts, running: 11,
+rowing: 10 at the time of writing), filterable by `search` and `category`, or one workout in full with
+`workoutId`. Schedule a workout by passing its `Id` as `taskTypeId` to `createTask` with
+`taskType: "E_Simple_Workout"` (tested: the workout shows up in the app's calendar).
+
+The library is built on your machine, not in the Worker: `npm run library` downloads the zips the app uses
+(listed in `scripts/workout-library-sources.json`), unzips them and writes
+`src/data/officialWorkouts.generated.ts`, which is bundled with the Worker but git-ignored. Run it once after
+cloning, before `npm run dev` or `npm run deploy`. When the tool reports a newer library, follow the
+`update-workout-library` skill (`.claude/skills/update-workout-library/SKILL.md`).
 
 ## Sports
 

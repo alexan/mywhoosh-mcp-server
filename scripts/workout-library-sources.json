@@ -1,0 +1,6 @@
+{
+  "_comment": "Public CDN zips of MyWhoosh's official workout library, from getGameTitleData (MyWhooshWorkoutsZipURL, ...Running, ...Rowing). listOfficialWorkouts reports when MyWhoosh publishes a newer one; update the URL here and run npm run library.",
+  "cycling": "https://prod-cdn-assets.mywhoosh.com/images/O1lUfPzhWGD7cVvXCoMUsmsFmQfya9Amec6buBXX.zip",
+  "running": "https://prod-cdn-assets.mywhoosh.com/images/TKKOzwazoIUQX3Cqdp9e9vj44sQbMIXVyleXj5WJ.zip",
+  "rowing": "https://prod-cdn-assets.mywhoosh.com/images/TGT2TqTnU4nFNGn2bri9y9TIHZ5XNJqS8IPw1PI8.zip"
+}

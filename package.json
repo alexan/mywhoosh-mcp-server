@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "wrangler deploy -c wrangler.local.jsonc",
+    "deploy": "bash scripts/deploy.sh",
+    "library": "node scripts/build-workout-library.mjs",
     "typecheck": "wrangler types && tsc"
   },
   "repository": {

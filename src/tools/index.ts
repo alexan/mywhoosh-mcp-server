@@ -42,6 +42,7 @@ import * as getServerTime from './getServerTime.js';
 import * as getTreasureHunt from './getTreasureHunt.js';
 import * as getVOD from './getVOD.js';
 import * as getWorldRoutePlayerCount from './getWorldRoutePlayerCount.js';
+import * as listOfficialWorkouts from './listOfficialWorkouts.js';
 import * as redeemCoupon from './redeemCoupon.js';
 import * as updatePlayerData from './updatePlayerData.js';
 import * as uploadCustomWorkout from './uploadCustomWorkout.js';
@@ -89,6 +90,7 @@ export const tools: ToolModule[] = [
   getTreasureHunt,
   getVOD,
   getWorldRoutePlayerCount,
+  listOfficialWorkouts,
   redeemCoupon,
   updatePlayerData,
   uploadCustomWorkout,
