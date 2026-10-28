@@ -54,7 +54,7 @@ export class MyWhooshClient {
       throw new McpError(ErrorCode.InvalidParams, `Login failed: ${response.status}`);
     }
 
-    const data = await response.json();
+    const data: any = await response.json();
     if (!data.Success) {
       throw new McpError(ErrorCode.InvalidParams, data.Message || 'Login failed');
     }
@@ -89,7 +89,7 @@ export class MyWhooshClient {
     options: MyWhooshRequestOptions & { method: string }
   ): Promise<T> {
     if (!this.tokens?.accessToken) {
-      throw new McpError(ErrorCode.InvalidRequest, 'Not authenticated. Call login first.');
+      throw new McpError(ErrorCode.InvalidRequest, 'Not authenticated. Re-authorize the MCP server.');
     }
 
     const baseUrl = BASE_URLS[options.baseUrl ?? 'MAIN'];
@@ -112,10 +112,14 @@ export class MyWhooshClient {
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new McpError(
-        response.status === 401 ? ErrorCode.InvalidRequest : ErrorCode.InternalError,
-        `API request failed: ${response.status} - ${errorText}`
-      );
+      // MyWhoosh access tokens live ~15 days; past that the only way back is a new login
+      if (response.status === 401) {
+        throw new McpError(
+          ErrorCode.InvalidRequest,
+          `MyWhoosh session expired (401). Re-authorize the MCP server in your client. ${errorText}`
+        );
+      }
+      throw new McpError(ErrorCode.InternalError, `API request failed: ${response.status} - ${errorText}`);
     }
 
     const contentType = response.headers.get('content-type') || '';

@@ -1,0 +1,19 @@
+{
+  "name": "mywhoosh-mcp",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-08-01",
+  // global_fetch_strictly_public: required for OAuth Client ID Metadata Documents
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "durable_objects": {
+    "bindings": [{ "name": "MCP_OBJECT", "class_name": "MyWhooshMCP" }],
+  },
+  // new_sqlite_classes = free-tier compatible Durable Objects
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["MyWhooshMCP"] }],
+  // replace id after: npx wrangler kv namespace create OAUTH_KV
+  "kv_namespaces": [{ "binding": "OAUTH_KV", "id": "REPLACE_WITH_KV_ID" }],
+  // OWNER_WHOOSH_IDS is a secret, not a committed var:
+  //   npx wrangler secret put OWNER_WHOOSH_IDS   (your WhooshId)
+  "observability": {
+    "logs": { "enabled": true, "head_sampling_rate": 1, "persist": true, "invocation_logs": true },
+  },
+}

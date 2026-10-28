@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { MyWhooshClient } from '../clients/mywhoosh.js';
 import { asMcpError, McpError } from './utils/toolHelpers.js';
-import AdmZip from 'adm-zip';
+import { unzipSync, strFromU8 } from 'fflate';
 
 export const method = 'downloadCustomWorkoutsFromS3';
 export const description = 'Download and extract all custom workouts from MyWhoosh S3 bucket. Returns the workout data as parsed JSON objects.';
@@ -33,22 +33,18 @@ export async function handler(
       throw new McpError(-32603, `Failed to download workouts: ${response.statusText}`);
     }
 
-    const buffer = Buffer.from(await response.arrayBuffer());
-    
-    // Extract ZIP
-    const zip = new AdmZip(buffer);
-    const zipEntries = zip.getEntries();
-    
+    // Extract ZIP (fflate: adm-zip needs node fs, which Workers lack)
+    const files = unzipSync(new Uint8Array(await response.arrayBuffer()), {
+      filter: (file) => file.name.endsWith('.json'),
+    });
+
     const workouts = [];
-    for (const entry of zipEntries) {
-      if (!entry.isDirectory && entry.entryName.endsWith('.json')) {
-        const content = entry.getData().toString('utf8');
-        try {
-          const workout = JSON.parse(content);
-          workouts.push(workout);
-        } catch (parseError) {
-          console.error(`Failed to parse ${entry.entryName}:`, parseError);
-        }
+    for (const [name, data] of Object.entries(files)) {
+      try {
+        const workout = JSON.parse(strFromU8(data));
+        workouts.push(workout);
+      } catch (parseError) {
+        console.error(`Failed to parse ${name}:`, parseError);
       }
     }
 

@@ -7,78 +7,34 @@
 
 ![MyWhoosh Logo](./docs/assets/mywhoosh-mcp-logo.png)
 
-A Model Context Protocol (MCP) server for MyWhoosh that allows you to access the MyWhoosh API directly from your AI provider (like Cursor, Claude Desktop, etc.). Create workouts, manage training sessions, schedule tasks, and more - all through natural language.
+A remote Model Context Protocol (MCP) server for MyWhoosh on Cloudflare Workers (free tier). It gives your AI client (Claude, Cursor, ChatGPT, ...) access to the MyWhoosh API: create workouts, manage training sessions, schedule tasks, and more - all through natural language.
 
-## Installation
+**Auth:** MyWhoosh has no public API or OAuth, so the server is its own OAuth 2.1 authorization server (via `@cloudflare/workers-oauth-provider`). Adding it to an MCP client opens a browser page where you enter your MyWhoosh email and password once. The Worker logs in to MyWhoosh, discards your credentials, and stores only the resulting MyWhoosh tokens, encrypted in the OAuth grant. Every `/mcp` request is gated on a provider-issued access token.
 
-### 1. Clone the repository
+## Deploy
 
-```bash
-git clone https://github.com/mywhoosh-community/mywhoosh-mcp-server.git
-cd mywhoosh-mcp-server
-```
+1. `npm install`
+2. `npx wrangler kv namespace create OAUTH_KV` - paste the id into `wrangler.jsonc`
+3. Optional: `npx wrangler secret put OWNER_WHOOSH_IDS` (see below)
+4. `npx wrangler deploy`
 
-### 2. Install dependencies
-
-```bash
-npm install
-```
-
-### 3. Build the project
+## Connect a client
 
 ```bash
-npm run build
+claude mcp add mywhoosh --transport http https://mywhoosh-mcp.<your-subdomain>.workers.dev/mcp
 ```
 
-### 4. Configure the MCP server
+Claude Code opens the authorization page in your browser. claude.ai web: Settings -> Connectors -> Add custom connector with the same URL. Cursor: add the URL as a remote (HTTP) MCP server. Stdio-only clients: `mcp-remote` handles the OAuth flow too.
 
-Add the following configuration to your AI provider (e.g., in Cursor under MCP Settings):
+## Locking to your own account
 
-```json
-{
-  "mcpServers": {
-    "mywhoosh-mcp-server": {
-      "command": "node",
-      "args": ["PATH_TO_PROJECT\\build\\index.js"],
-      "env": {
-        "MYWHOOSH_USERNAME": "${input:mywhoosh-username}",
-        "MYWHOOSH_PASSWORD": "${input:mywhoosh-password}"
-      }
-    }
-  },
-  "inputs": [
-    {
-      "id": "mywhoosh-username",
-      "type": "promptString",
-      "description": "Enter your MyWhoosh username"
-    },
-    {
-      "id": "mywhoosh-password",
-      "type": "promptString",
-      "description": "Enter your MyWhoosh password",
-      "password": true
-    }
-  ]
-}
-```
+Set the `OWNER_WHOOSH_IDS` secret to your WhooshId (comma-separated allowlist). Logins for any other MyWhoosh account are rejected at the authorize step, so strangers can't use your deployment even with their own valid MyWhoosh credentials. Leave it unset to allow any account.
 
-**Important:** Replace `PATH_TO_PROJECT` with the absolute path to your cloned repository (e.g., `C:\\Users\\admin\\Desktop\\mywhoosh-mcp-server` on Windows or `/home/user/mywhoosh-mcp-server` on Linux/Mac).
+## Notes
 
-### Configuration in different AI providers
-
-#### Cursor
-
-1. Open the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`)
-2. Search for "MCP: Edit Configuration"
-3. Paste the configuration above
-
-#### Claude Desktop
-
-Edit the configuration file:
-
-- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
-- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
-- Linux: `~/.config/Claude/claude_desktop_config.json`
+- MyWhoosh access tokens expire after about two weeks. Tool calls then fail with "session expired" - re-authorize the server in your client to log in again.
+- Access tokens are bearer credentials: whoever holds a valid one has your data until it expires, so security rests on your MCP client keeping its stored token secret.
+- Local dev: `npm run dev`, then point a client at `http://localhost:8787/mcp`.
 
 ## Usage
 
