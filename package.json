@@ -10,15 +10,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mywhoosh-community/mywhoosh-mcp-server.git"
+    "url": "git+https://github.com/alexan/mywhoosh-mcp-server.git"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/mywhoosh-community/mywhoosh-mcp-server/issues"
   },
-  "homepage": "https://github.com/mywhoosh-community/mywhoosh-mcp-server#readme",
+  "homepage": "https://github.com/alexan/mywhoosh-mcp-server#readme",
   "dependencies": {
     "@cloudflare/workers-oauth-provider": "^0.10.4",
     "@modelcontextprotocol/sdk": "1.26.0",
