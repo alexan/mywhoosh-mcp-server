@@ -26,10 +26,15 @@ Login errors (wrong password, account not allowed, invalid request) are shown on
 
 Requires a Cloudflare account (`npx wrangler login`).
 
+Your account-specific ids live in `wrangler.local.jsonc`, which is git-ignored; `wrangler.jsonc` stays generic
+for local development.
+
 1. `npm install`
-2. `npx wrangler kv namespace create OAUTH_KV` - replace `REPLACE_WITH_KV_ID` in `wrangler.jsonc` with the printed id
-3. Optional: `npx wrangler secret put OWNER_WHOOSH_IDS` (see below)
-4. `npx wrangler deploy`
+2. `cp wrangler.local.example.jsonc wrangler.local.jsonc`
+3. `npx wrangler kv namespace create mywhoosh-mcp-oauth` - put the printed id into `wrangler.local.jsonc`
+   (use a namespace of its own; sharing one with another OAuth worker mixes their grants)
+4. Recommended: `npx wrangler secret put OWNER_WHOOSH_IDS -c wrangler.local.jsonc` (see below)
+5. `npm run deploy` (runs `wrangler deploy -c wrangler.local.jsonc`)
 
 ## Connect a client
 

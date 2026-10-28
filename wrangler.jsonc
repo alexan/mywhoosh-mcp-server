@@ -9,10 +9,9 @@
   },
   // new_sqlite_classes = free-tier compatible Durable Objects
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["MyWhooshMCP"] }],
-  // replace id after: npx wrangler kv namespace create OAUTH_KV
+  // placeholder for local dev / typecheck; real ids go in wrangler.local.jsonc (see wrangler.local.example.jsonc)
   "kv_namespaces": [{ "binding": "OAUTH_KV", "id": "REPLACE_WITH_KV_ID" }],
-  // OWNER_WHOOSH_IDS is a secret, not a committed var:
-  //   npx wrangler secret put OWNER_WHOOSH_IDS   (your WhooshId)
+  // OWNER_WHOOSH_IDS is a secret, not a committed var (set it with -c wrangler.local.jsonc)
   "observability": {
     "logs": { "enabled": true, "head_sampling_rate": 1, "persist": true, "invocation_logs": true },
   },
