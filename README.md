@@ -72,7 +72,8 @@ rowing: 10 at the time of writing), filterable by `search` and `category`, or on
 
 The library is built on your machine, not in the Worker: `npm run library` downloads the zips the app uses
 (listed in `scripts/workout-library-sources.json`), unzips them and writes
-`src/data/officialWorkouts.generated.ts`, which is bundled with the Worker but git-ignored. Run it once after
+`src/data/officialWorkouts.generated.ts`, a TypeScript literal checked against the types in
+`src/data/officialWorkouts.ts` (`npm run typecheck`). It is bundled with the Worker but git-ignored. Run it once after
 cloning, before `npm run dev` or `npm run deploy`. When the tool reports a newer library, follow the
 `update-workout-library` skill (`.claude/skills/update-workout-library/SKILL.md`).
 

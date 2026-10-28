@@ -35,17 +35,27 @@ export async function handler(
     const library = LIBRARY[args.sport];
 
     if (args.workoutId !== undefined) {
-      const entry = library.workouts.find((w) => w.summary.Id === args.workoutId);
-      if (!entry) throw new McpError(-32602, `No official ${args.sport} workout with Id ${args.workoutId}`);
+      const workout = library.workouts.find((w) => w.Id === args.workoutId);
+      if (!workout) throw new McpError(-32602, `No official ${args.sport} workout with Id ${args.workoutId}`);
       return {
-        content: [{ type: 'text', text: JSON.stringify(entry.workout, null, 2) }],
+        content: [{ type: 'text', text: JSON.stringify(workout, null, 2) }],
       };
     }
 
     const search = args.search?.toLowerCase();
     const category = args.category?.toLowerCase();
+    const categories: Record<number, string> = library.categories;
     const matches = library.workouts
-      .map((w) => w.summary)
+      .map((w) => ({
+        Id: w.Id,
+        Name: w.Name,
+        Category: categories[w.CategoryId] ?? String(w.CategoryId),
+        Time: w.Time,
+        TSS: w.TSS,
+        IF: w.IF,
+        StepCount: w.StepCount,
+        Author: w.AuthorName || undefined,
+      }))
       .filter((w) => !search || w.Name.toLowerCase().includes(search))
       .filter((w) => !category || w.Category.toLowerCase().includes(category));
 

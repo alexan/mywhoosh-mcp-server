@@ -1,23 +1,71 @@
 #!/usr/bin/env node
-// Unzips MyWhoosh's official workout library on this machine and writes it as TypeScript, so the
-// Worker bundles prepared data and never downloads or unzips anything itself.
+// Unzips MyWhoosh's official workout library on this machine and writes it as a TypeScript literal,
+// so the Worker bundles prepared data and never downloads or unzips anything itself.
 //
 //   npm run library
 //
-// Sources: scripts/workout-library-sources.json. Output: src/data/officialWorkouts.generated.ts,
-// which is git-ignored: it is MyWhoosh content and must not be published with the repo.
+// Sources: scripts/workout-library-sources.json. Output: src/data/officialWorkouts.generated.ts
+// (`… satisfies OfficialLibrary`), git-ignored because it is MyWhoosh content. Keys are normalized to
+// the names in src/data/officialWorkouts.ts; a key that isn't known there stops the build, and
+// `npm run typecheck` then checks every value against the types.
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { unzipSync, strFromU8 } from 'fflate';
 
 const root = new URL('..', import.meta.url).pathname;
 const sources = JSON.parse(readFileSync(new URL('./workout-library-sources.json', import.meta.url), 'utf8'));
 
-// older library files use camelCase keys (id, categoryId), newer ones PascalCase (Id, CategoryId)
-const field = (obj, key) => {
-  const lower = key.toLowerCase();
-  for (const [k, v] of Object.entries(obj)) if (k.toLowerCase() === lower) return v;
-  return undefined;
-};
+// canonical names from src/data/officialWorkouts.ts, looked up case-insensitively
+const canonical = (names) => new Map(names.map((n) => [n.toLowerCase(), n]));
+const WORKOUT_KEYS = canonical([
+  'Id', 'Name', 'Description', 'Mode', 'ERGMode', 'FTPMode', 'FTPMultiplier', 'IsRecovery', 'IsIntervals',
+  'IsTT', 'IsTSS', 'IsIF', 'StressPoint', 'Time', 'CustomTagDescription', 'CategoryId', 'SubcategoryId', 'Type',
+  'DisplayType', 'StepCount', 'IsFavorite', 'CompletedCount', 'AuthorName', 'WokoutAssociationId', 'IF', 'TSS',
+  'KJ', 'IsVODAvailable', 'Environment', 'ScheduledDate', 'SportsModeType',
+]);
+// the files keep steps in any of these three; they are merged into WorkoutStepsArray
+const STEP_CONTAINERS = ['workoutstepsarray', 'workoutstepstmap', 'workoutsteps'];
+const STEP_KEYS = canonical([
+  'Id', 'Pace', 'IntervalId', 'WorkoutMessage', 'Rpm', 'StepType', 'Power', 'StartPower', 'EndPower', 'Time',
+  'IsManualGrade', 'ManualGradeValue', 'ShowAveragePower', 'FlatRoad',
+]);
+const MESSAGE_KEYS = canonical(['Id', 'Time', 'Message']);
+
+function normalize(obj, keys, where) {
+  const out = {};
+  for (const [k, v] of Object.entries(obj)) {
+    const name = keys.get(k.toLowerCase());
+    if (!name) throw new Error(`unknown key "${k}" in ${where} - add it to src/data/officialWorkouts.ts and this script`);
+    out[name] = v;
+  }
+  return out;
+}
+
+function stepsOf(raw) {
+  const containers = Object.fromEntries(
+    Object.entries(raw).filter(([k]) => STEP_CONTAINERS.includes(k.toLowerCase())).map(([k, v]) => [k.toLowerCase(), v])
+  );
+  // WorkoutSteps is sometimes an object keyed "1", "2", ...
+  const asList = (v) => (Array.isArray(v) ? v : v && typeof v === 'object' ? Object.keys(v).sort((a, b) => a - b).map((k) => v[k]) : []);
+  for (const key of STEP_CONTAINERS) {
+    const list = asList(containers[key]);
+    if (list.length) return list;
+  }
+  return [];
+}
+
+function normalizeWorkout(raw, where) {
+  const fields = Object.fromEntries(Object.entries(raw).filter(([k]) => !STEP_CONTAINERS.includes(k.toLowerCase())));
+  const workout = normalize(fields, WORKOUT_KEYS, where);
+  workout.WorkoutStepsArray = stepsOf(raw).map((s, i) => {
+    const step = normalize(s, STEP_KEYS, `${where} step ${i + 1}`);
+    step.WorkoutMessage = (step.WorkoutMessage ?? []).map((m) => normalize(m, MESSAGE_KEYS, `${where} step ${i + 1} message`));
+    return step;
+  });
+  if (workout.WorkoutStepsArray.length !== workout.StepCount) {
+    throw new Error(`${where}: ${workout.WorkoutStepsArray.length} steps found but StepCount is ${workout.StepCount}`);
+  }
+  return workout;
+}
 
 const library = {};
 for (const sport of ['cycling', 'running', 'rowing']) {
@@ -26,9 +74,9 @@ for (const sport of ['cycling', 'running', 'rowing']) {
   if (!res.ok) throw new Error(`${sport}: download failed ${res.status} (${url})`);
   const files = unzipSync(new Uint8Array(await res.arrayBuffer()), { filter: (f) => f.name.endsWith('.json') });
 
-  const categories = new Map();
+  const categories = {};
   const workouts = [];
-  for (const data of Object.values(files)) {
+  for (const [name, data] of Object.entries(files)) {
     let parsed;
     try {
       parsed = JSON.parse(strFromU8(data).replace(/^﻿/, ''));
@@ -37,49 +85,31 @@ for (const sport of ['cycling', 'running', 'rowing']) {
     }
     if (!parsed || typeof parsed !== 'object') continue;
     if (Array.isArray(parsed.WorkoutsCategoryArray)) {
-      for (const c of parsed.WorkoutsCategoryArray) categories.set(field(c, 'id'), field(c, 'categoryname'));
+      for (const c of parsed.WorkoutsCategoryArray) {
+        const cat = Object.fromEntries(Object.entries(c).map(([k, v]) => [k.toLowerCase(), v]));
+        categories[cat.id] = cat.categoryname;
+      }
       continue;
     }
-    // a few files (Taper 732-734) have no WorkoutStepsArray, an empty WorkoutSteps and their steps in
-    // WorkoutstepsTMap; copy them into WorkoutStepsArray so every workout has its steps in the same place
-    if (typeof field(parsed, 'id') !== 'number') continue;
-    if (!Array.isArray(field(parsed, 'workoutStepsArray'))) {
-      const tmap = field(parsed, 'workoutstepsTMap');
-      if (!Array.isArray(field(parsed, 'workoutSteps')) && !Array.isArray(tmap)) continue;
-      parsed.WorkoutStepsArray = Array.isArray(tmap) && tmap.length ? tmap : field(parsed, 'workoutSteps');
-    }
-    workouts.push(parsed);
+    if (!Object.keys(parsed).some((k) => k.toLowerCase() === 'id')) continue;
+    workouts.push(normalizeWorkout(parsed, `${sport}/${name}`));
   }
 
   library[sport] = {
     sourceUrl: url,
     generatedAt: new Date().toISOString(),
-    workouts: workouts
-      .map((w) => ({
-        summary: {
-          Id: field(w, 'id'),
-          Name: field(w, 'name'),
-          Category: categories.get(field(w, 'categoryId')) ?? String(field(w, 'categoryId')),
-          Time: field(w, 'time'),
-          TSS: field(w, 'TSS'),
-          IF: field(w, 'IF'),
-          StepCount: field(w, 'stepCount'),
-          Author: field(w, 'authorName') || undefined,
-        },
-        workout: w,
-      }))
-      .sort((a, b) => a.summary.Id - b.summary.Id),
+    categories,
+    workouts: workouts.sort((a, b) => a.Id - b.Id),
   };
-  console.log(`${sport}: ${workouts.length} workouts, ${categories.size} categories`);
+  console.log(`${sport}: ${workouts.length} workouts, ${Object.keys(categories).length} categories`);
 }
 
-// JSON.parse of a string literal loads faster than an equally large object literal
 const out = `${root}src/data/officialWorkouts.generated.ts`;
 mkdirSync(`${root}src/data`, { recursive: true });
 writeFileSync(
   out,
   `// Generated by scripts/build-workout-library.mjs (npm run library). Do not edit, do not commit.\n` +
     `import type { OfficialLibrary } from './officialWorkouts.js';\n\n` +
-    `export const LIBRARY: OfficialLibrary = JSON.parse(${JSON.stringify(JSON.stringify(library))});\n`
+    `export const LIBRARY = ${JSON.stringify(library, null, 1)} satisfies OfficialLibrary;\n`
 );
-console.log(`wrote ${out}`);
+console.log(`wrote ${out} - run npm run typecheck to check it against the types`);
