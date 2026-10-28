@@ -96,7 +96,6 @@ EXAMPLE WORKOUT:
 
 export const parameters = z.object({
   workouts: z.array(workoutSchema).describe('Array of workout definitions to upload'),
-  sportsModeType: z.number().int().min(0).max(3).default(0).describe('Sports mode type, one of 0-3 (0 = cycling, as the app default)'),
 });
 
 export async function handler(
@@ -125,9 +124,11 @@ export async function handler(
       baseUrl: 'COACHING',
       body: JSON.stringify({
         UserId: whooshId,
-        // required top-level since late 2025 (400 "SportsModeType should not be empty" without it);
-        // see https://github.com/isllabres/mywhoosh-mcp-server/issues/1
-        SportsModeType: args.sportsModeType,
+        // required top-level (400 "SportsModeType should not be empty" without it; MyWhoosh accepts 0-3).
+        // Tested: uploads with 0 appear under Cycling in the app; 1-3 were accepted but showed up under
+        // no sport (Cycling, Running, Rowing), so it stays fixed at 0.
+        // https://github.com/mywhoosh-community/mywhoosh-mcp-server/issues/1
+        SportsModeType: 0,
         WorkoutsData: workoutsData,
       }),
     });
