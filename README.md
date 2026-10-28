@@ -56,6 +56,15 @@ The request shapes follow what the MyWhoosh app sends (see `.claude/skills/mitm-
 | Delete | `deleteCustomWorkout` | running, rowing |
 | Schedule / list / delete calendar tasks | `createTask`, `getDateRangeTaskList`, `deleteTask` | yes |
 
+## Sports
+
+Besides the custom workout tools, these tools take `sport` too and send it as `sportType`, like the app:
+`getBundleInfo`, `getCalculations`, `getChallenges`, `getControllableBots`, `getEvents`, `getGarageItems`,
+`getGroupWorkouts`, `getMissions`, `getMissionProgress`, `getPlayerAchievements`, `getPlayerGhostRideData`,
+`getPlayerTrophiesJerseys`, `getTreasureHunt`. Without it they return cycling data. `getTreasureHunt` returns
+an encoded string (the app receives the same), and `getSeasonPassProgress` is untested because no season pass
+was active.
+
 ## Usage
 
 Examples:

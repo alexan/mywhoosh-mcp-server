@@ -173,10 +173,13 @@ export class MyWhooshClient {
       throw new McpError(ErrorCode.InternalError, `API request failed: ${response.status} - ${errorText}`);
     }
 
-    const contentType = response.headers.get('content-type') || '';
-    if (contentType.includes('application/json')) {
-      return response.json();
+    // some endpoints (e.g. game/treasure-hunt) send an encoded string with a JSON content type,
+    // so parse leniently and fall back to the raw text instead of failing
+    const text = await response.text();
+    try {
+      return JSON.parse(text) as T;
+    } catch {
+      return text as T;
     }
-    return response.text() as T;
   }
 }

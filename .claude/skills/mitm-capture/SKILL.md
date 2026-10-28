@@ -75,5 +75,9 @@ The app also sends `Environment: "E_Outside"` and `ScheduledDate: ""` per workou
 Unix time in seconds as a new workout's `Id`. Putting the WhooshId where `{sport}` belongs makes
 the server answer `Cast to Number failed for value "NaN" … at path "sportsModeType"`.
 
+Other endpoints take the sport as query parameter `sportType`: `Cycling` / `Running` / `Rowing`
+(economy, challenges, bots, missions, achievements, ghost rides, group workouts, treasure hunt) or
+`E_Cycling` / `E_Running` / `E_Rowing` for `service26 …/v1/events`.
+
 Token renewal: `GET services.mywhoosh.com/http-service/api/tokens/generate` with the refresh
 token as bearer returns a new access and refresh token.
