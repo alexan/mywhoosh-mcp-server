@@ -9,7 +9,9 @@
   },
   // new_sqlite_classes = free-tier compatible Durable Objects
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["MyWhooshMCP"] }],
-  // placeholder for local dev / typecheck; real ids go in wrangler.local.jsonc (see wrangler.local.example.jsonc)
+  // placeholder for local dev / typecheck. To deploy, copy this file to wrangler.local.jsonc (git-ignored)
+  // and put the id from `npx wrangler kv namespace create mywhoosh-mcp-oauth` there; use a namespace of
+  // its own, sharing one with another OAuth worker mixes their grants
   "kv_namespaces": [{ "binding": "OAUTH_KV", "id": "REPLACE_WITH_KV_ID" }],
   // OWNER_WHOOSH_IDS is a secret, not a committed var (set it with -c wrangler.local.jsonc)
   "observability": {

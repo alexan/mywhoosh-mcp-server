@@ -30,8 +30,8 @@ Your account-specific ids live in `wrangler.local.jsonc`, which is git-ignored; 
 for local development.
 
 1. `npm install`
-2. `cp wrangler.local.example.jsonc wrangler.local.jsonc`
-3. `npx wrangler kv namespace create mywhoosh-mcp-oauth` - put the printed id into `wrangler.local.jsonc`
+2. `cp wrangler.jsonc wrangler.local.jsonc`
+3. `npx wrangler kv namespace create mywhoosh-mcp-oauth` - replace `REPLACE_WITH_KV_ID` in `wrangler.local.jsonc` with the printed id
    (use a namespace of its own; sharing one with another OAuth worker mixes their grants)
 4. Recommended: `npx wrangler secret put OWNER_WHOOSH_IDS -c wrangler.local.jsonc` (see below)
 5. `npm run deploy` (runs `wrangler deploy -c wrangler.local.jsonc`)

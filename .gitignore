@@ -16,7 +16,7 @@ worker-configuration.d.ts
 .env
 *.local
 
-# deployment config with your account's ids (template: wrangler.local.example.jsonc)
+# deployment config with your account's ids (copy of wrangler.jsonc, see README)
 wrangler.local.jsonc
 
 # os / editor
